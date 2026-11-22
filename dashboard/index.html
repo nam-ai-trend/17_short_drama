@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short Drama Studio - Production Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    /* Google Minimal Toast Notification (Replaces annoying browser alert popups) */
+    .toast-container {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast {
+      background: #202124;
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: auto;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.success { border-left: 4px solid var(--google-green); }
+    .toast.info { border-left: 4px solid var(--google-blue); }
+    .toast.warning { border-left: 4px solid var(--google-amber); }
+    .toast.error { border-left: 4px solid var(--google-red); }
+
+    /* Google Minimal Design Tokens (Zero Purple, Zero Neon) */
+    :root {
+      --bg: #F8F9FA;
+      --surface: #FFFFFF;
+      --surface-variant: #F1F3F4;
+      --border: #DADCE0;
+      --border-subtle: #E8EAED;
+      
+      --text-main: #202124;
+      --text-secondary: #5F6368;
+      --text-muted: #80868B;
+      
+      --google-blue: #1A73E8;
+      --google-blue-hover: #1557B0;
+      --google-blue-light: #E8F0FE;
+      
+      --google-green: #1E8E3E;
+      --google-green-light: #E6F4EA;
+      
+      --google-amber: #E37400;
+      --google-amber-light: #FEF7E0;
+      
+      --google-red: #D93025;
+      --google-red-light: #FCE8E6;
+      
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+      --shadow-md: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      background: var(--google-blue);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.5px;
+    }
+    .app-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .project-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    select, button, input, textarea {
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .select-input {
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-main);
+      outline: none;
+      font-weight: 500;
+    }
+    .select-input:focus {
+      border-color: var(--google-blue);
+      box-shadow: 0 0 0 2px var(--google-blue-light);
+    }
+    .btn {
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-primary {
+      background: var(--google-blue);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--google-blue-hover); }
+    .btn-step {
+      height: 36px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      justify-content: center;
+    }
+    .step-num-badge {
+      background: white;
+      color: var(--google-blue);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .btn-secondary:hover { background: var(--surface-variant); }
+    .btn-tonal {
+      background: var(--google-blue-light);
+      color: var(--google-blue);
+    }
+    .btn-tonal:hover { background: #d2e3fc; }
+
+    /* Layout Main Body */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Tabs Bar */
+    .tabs-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+    }
+    .tab-btn {
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active {
+      color: var(--google-blue);
+      border-bottom-color: var(--google-blue);
+      font-weight: 600;
+    }
+
+    /* Tab Content Area */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tab-panel {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .tab-panel.active { display: block; }
+
+    /* Two-column Master/Detail View */
+    .panel-split {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      height: 100%;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(60,64,67,0.05);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Model Selection Box */
+    .model-selector-card {
+      background: var(--google-blue-light);
+      border: 1px solid #C2E7FF;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .model-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+    .badge-flagship { background: #FEF7E0; color: #B06000; border: 1px solid #F9AB00; }
+    .badge-budget { background: #E6F4EA; color: #137333; border: 1px solid #CEEAD6; }
+    .badge-standard { background: #E8F0FE; color: #1A73E8; border: 1px solid #AECBFA; }
+
+    /* Cards Grid */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .asset-card, .keyframe-card, .take-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .media-preview-box {
+      background: #000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .media-preview-box.ratio-9-16 {
+      aspect-ratio: 9/16;
+      max-height: 380px;
+    }
+    .media-preview-box.ratio-16-9 {
+      aspect-ratio: 16/9;
+      width: 100%;
+    }
+    .media-preview-box img, .media-preview-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .media-placeholder {
+      color: #9AA0A6;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+    .card-details {
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .item-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .item-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    /* Editor styling */
+    textarea.code-editor {
+      width: 100%;
+      height: 480px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      resize: vertical;
+      background: #FAFAFA;
+      color: #202124;
+      outline: none;
+    }
+    textarea.code-editor:focus {
+      background: #FFF;
+      border-color: var(--google-blue);
+    }
+
+    /* Synopsis proposal cards */
+    .synopsis-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .synopsis-card:hover {
+      border-color: var(--google-blue);
+      box-shadow: 0 1px 3px rgba(26,115,232,0.15);
+    }
+    .synopsis-card.selected {
+      border: 2px solid var(--google-blue);
+      background: #F8FAFD;
+    }
+
+    /* Bottom Status & Progress Drawer */
+    .status-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--google-green);
+    }
+    .dot.busy { background: var(--google-amber); animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    /* Modal dialog */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      width: 600px;
+      max-width: 90vw;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 20px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      background: var(--surface-variant);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand-area">
+      <span class="logo-badge">STUDIO</span>
+      <span class="app-title">Short Drama Higgsfield Pipeline</span>
+    </div>
+    <div class="project-controls">
+      <label style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">Project:</label>
+      <select id="projectSelect" class="select-input" onchange="switchProject(this.value)">
+        <!-- Projects populated dynamically -->
+      </select>
+      <button class="btn btn-secondary" onclick="openNewProjectModal()">+ New Drama</button>
+      <button class="btn btn-tonal" onclick="refreshProjectData()">🔄 Refresh</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs (Screenplay, Bible & Breakdown, Assets, Keyframes, Takes & Cut) -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('screenplay')">1. 대본 (Screenplay)</button>
+    <button class="tab-btn" onclick="switchTab('breakdown')">2. 대본구성 (Bible & Breakdown)</button>
+    <button class="tab-btn" onclick="switchTab('assets')">3. 에셋 (Master Sheets)</button>
+    <button class="tab-btn" onclick="switchTab('keyframes')">4. 이미지 (Keyframes)</button>
+    <button class="tab-btn" onclick="switchTab('takes')">5. 영상 (Takes & Cut)</button>
+  </div>
+
+  <!-- Step-by-Step Production Wizard Navigation Bar -->
+  <div style="background: var(--surface); padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-right: 8px;">🎬 제작 순서 (Step 1~5):</span>
+      <button id="stepBtn1" class="btn btn-secondary" onclick="goToStep(1)" style="font-size: 12px;">
+        <span style="background: var(--google-blue); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 4px;">1</span>
+        대본 확정
+      </button>
+      <span style="color: var(--text-muted); font-size: 12px;">➔</span>
+      <button id="stepBtn2" class="btn btn-secondary" onclick="goToStep(2)" style="font-size: 12px;">
+        <span style="background: var(--google-blue); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 4px;">2</span>
+        대본구성 (바이블/세그먼트)
+      </button>
+      <span style="color: var(--text-muted); font-size: 12px;">➔</span>
+      <button id="stepBtn3" class="btn btn-secondary" onclick="goToStep(3)" style="font-size: 12px;">
+        <span style="background: var(--google-blue); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 4px;">3</span>
+        마스터 시트 생성 & 자동 슬라이싱
+      </button>
+      <span style="color: var(--text-muted); font-size: 12px;">➔</span>
+      <button id="stepBtn4" class="btn btn-secondary" onclick="goToStep(4)" style="font-size: 12px;">
+        <span style="background: var(--text-muted); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-right: 4px;">4</span>
+        키프레임 생성
+      </button>
+      <span style="color: var(--text-muted); font-size: 12px;">➔</span>
+      <button id="stepBtn5" class="btn btn-secondary" onclick="goToStep(5)" style="font-size: 12px;">
+        <span style="background: var(--text-muted); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 4px;">5</span>
+        영상 렌더링 & 24fps 최종 컷
+      </button>
+    </div>
+  </div>
+
+  <!-- Global Model Curation Bar -->
+  <div style="background: var(--surface); padding: 8px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">비디오 모델:</span>
+        <select id="globalVideoModel" class="select-input" style="padding: 4px 8px; font-size: 12px;">
+          <!-- Loaded via /api/models -->
+        </select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">이미지 모델:</span>
+        <select id="globalImageModel" class="select-input" style="padding: 4px 8px; font-size: 12px;">
+          <!-- Loaded via /api/models -->
+        </select>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span id="creditEstimatePill" style="font-size: 12px; font-weight: 600; color: var(--google-blue); background: var(--google-blue-light); padding: 3px 8px; border-radius: 4px;">
+        예상 비용: 힉스필드에서 확인 필요
+      </span>
+    </div>
+  </div>
+
+  <!-- Main Workspaces Container -->
+  <div class="content-area">
+
+    <!-- TAB 1: 대본 (Screenplay) -->
+    <div id="tab-screenplay" class="tab-panel active">
+      <div class="panel-split">
+        <!-- Left: Reference Video URL & Antigravity Bridge -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="card-title">
+            <span>레퍼런스 영상 기반 대본 기획</span>
+            <span style="font-size: 11px; color: var(--google-blue); background: var(--google-blue-light); padding: 2px 6px; border-radius: 4px;">Antigravity Skill</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+            유튜브 쇼츠/릴스 URL을 넣으면 <strong>shorts-drama-writer</strong> 스킬이 황금 법칙(Why? → Bridge → Aha!) 기반 3색 시놉시스를 제안합니다.
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">레퍼런스 영상 URL:</label>
+            <input type="text" id="refUrlInput" class="select-input" style="width: 100%;" placeholder="https://youtube.com/shorts/..." />
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 12px; font-weight: 600;">목표 영상 길이:</label>
+              <span id="targetDurationBadge" style="font-size: 11px; color: var(--google-blue); font-weight: 600;">약 60초</span>
+            </div>
+            <select id="targetDurationSelect" class="select-input" style="width: 100%;" onchange="updateDurationBadge(this.value)">
+              <option value="30">⚡ 30초 초압축</option>
+              <option value="60" selected>🎬 60초 표준 쇼츠</option>
+              <option value="90">📖 90초 감정 완결형</option>
+              <option value="120">🎞️ 120초 미니 시네마</option>
+            </select>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+              * <strong>세그먼트(컷) 수 ≠ 씬 수</strong>: 한 씬(장소) 안에서도 대사와 반응에 따라 나뉩니다. Seedance 2.0은 4~15초 정수로 생성하며, 대치 장면은 여유 있게 구성할 수 있습니다.
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">기획 추가 요청사항 / 장르:</label>
+            <textarea id="refNotesInput" class="select-input" style="width: 100%; height: 60px; resize: none;" placeholder="예: 재벌가 갑질 사이다 참교육, 70대 모자간 눈물 보은 스토리..."></textarea>
+          </div>
+          <button id="btnRequestSynopsis" class="btn btn-primary" onclick="requestSynopsisFromAntigravity()" style="justify-content: center; height: 38px;">
+            <span id="synopsisSpinner" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+            <span id="synopsisBtnText">시놉시스 요청</span>
+          </button>
+
+          <!-- Synopsis Proposals View -->
+          <div id="proposalsContainer" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">제안된 3색 시놉시스 (클릭하여 선택):</span>
+              <span id="proposalBadge" style="font-size: 11px; color: var(--google-green); font-weight: 600;"></span>
+            </div>
+            <div id="proposalReviewSummary" style="font-size: 11px; color: var(--text-secondary); white-space: pre-line;"></div>
+            <div id="synopsisList">
+              <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: var(--radius-sm);">
+                URL을 입력하고 [시놉시스 요청]을 누르면 3가지 시놉시스가 여기에 표시됩니다.
+              </div>
+            </div>
+            <button id="btnApplySynopsis" class="btn btn-tonal" style="display: none; margin-top: 8px; justify-content: center;" onclick="applySelectedSynopsis()">
+              ✍️ 선택한 시놉시스로 전체 대본 생성
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Screenplay Text Editor (Direct editing & Feedback) -->
+        <div class="card" style="display: flex; flex-direction: column; height: 100%;">
+          <div class="card-title">
+            <span>대본 편집기 (Screenplay .fountain / .txt)</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn btn-secondary btn-step" onclick="saveScreenplay()">💾 대본 저장</button>
+              <button id="btnGenerateBibleFromScript" class="btn btn-primary btn-step" onclick="generateBibleFromScript()">
+                <span id="spinnerStep2Tab1" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+                <span class="step-num-badge">2</span>
+                <span id="txtStep2Tab1">Step 2: 바이블·브레이크다운 생성</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="screenplayEditor" class="code-editor" placeholder="Title: 대본 제목&#10;&#10;EXT. 골목길 - 밤&#10;..."></textarea>
+          <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="scriptFeedbackInput" class="select-input" style="flex: 1;" placeholder="대본 피드백 입력 (예: 2번 씬 갈등을 더 자극적으로 바꾸고 반전 대사 추가해줘)" />
+            <button class="btn btn-secondary" onclick="sendFeedbackToAntigravity()">💬 안티그래비티에 수정 요청</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 대본구성 (Bible & Breakdown) -->
+    <div id="tab-breakdown" class="tab-panel">
+      <div class="panel-split">
+        <!-- Left: Step 2-1 Story Bible -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto;">
+          <div class="card-title" style="margin-bottom: 0;">
+            <span>Step 2-1: 스토리 바이블 (인물 · 장소 · 소품)</span>
+            <button class="btn btn-secondary" style="font-size: 12px; padding: 4px 10px;" onclick="saveBibleData()">💾 저장</button>
+          </div>
+          <button id="btnGenerateBibleTab2" class="btn btn-primary btn-step" style="width: 100%;" onclick="generateBibleFromScript()">
+            <span id="spinnerStep2Tab2" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+            <span class="step-num-badge">2</span>
+            <span id="txtStep2Tab2">Step 2: 바이블·브레이크다운 재생성</span>
+          </button>
+          <div>
+            <label style="font-size: 12px; font-weight: 600;">작품 제목 / 로그라인:</label>
+            <input type="text" id="bibleTitle" class="select-input" style="width: 100%; margin-top: 4px;" />
+            <textarea id="bibleLogline" class="select-input" style="width: 100%; height: 50px; margin-top: 4px; resize: none;"></textarea>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600;">캐릭터 목록:</label>
+            <div id="bibleCharactersList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600;">장소(로케이션) 목록:</label>
+            <div id="bibleScenesList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;"></div>
+          </div>
+        </div>
+
+        <!-- Right: Step 2-2 Episode Breakdown & Golden Rule 0 Segments -->
+        <div class="card" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+          <div class="card-title" style="flex-shrink: 0;">
+            <div>
+              <span>Step 2-2: 에피소드 브레이크다운 (샷 리스트 & 세그먼트)</span>
+              <p style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-top: 2px;">
+                대사나 시작 상태를 카드 안에서 직접 수정하고 저장할 수 있습니다.
+              </p>
+            </div>
+            <button class="btn btn-tonal btn-step" onclick="saveEditedBreakdownData()">💾 수정한 브레이크다운 저장</button>
+          </div>
+          <div id="storyReviewSummary" style="flex-shrink: 0; margin: 8px 0; padding: 10px 12px; border-radius: 8px; background: #F1F3F4; color: var(--text-secondary); font-size: 12px; white-space: pre-line;"></div>
+          
+          <div id="segmentsListContainer" style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; padding-right: 6px;">
+            <!-- Rendered Segments with Direct Input Fields -->
+          </div>
+
+          <!-- Breakdown AI Feedback Input -->
+          <div style="flex-shrink: 0; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="breakdownFeedbackInput" class="select-input" style="flex: 1;" placeholder="브레이크다운 AI 수정 피드백 (예: 2번 컷을 슬픈 눈물 클로즈업으로 바꾸고 3번 컷 대사 템포를 8초로 늘려줘)" />
+            <button class="btn btn-secondary" onclick="sendBreakdownFeedback()">🔄 피드백 반영 재생성</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 에셋 (Master Sheets) -->
+    <div id="tab-assets" class="tab-panel">
+      <!-- Master Sheets Banner -->
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">
+          <span>Step 3: 16:9 마스터 시트 (캐릭터는 최대 4명씩 분할)</span>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button id="btnAutoAllPipeline" class="btn btn-secondary btn-step" onclick="runAutoPipelineFromStep3()">
+              <span id="spinnerAutoAll" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+              <span id="txtAutoAll">⚡ 원클릭 전체 자동 제작 (Step 3➔5)</span>
+            </button>
+            <button id="btnStep3MissingSheets" class="btn btn-tonal btn-step" onclick="runStageAction('2', { skipExisting: true })">
+              <span id="spinnerStep3Missing" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+              <span id="txtStep3Missing">⚡ 미생성 시트만 생성</span>
+            </button>
+            <button id="btnStep3MasterSheets" class="btn btn-primary btn-step" onclick="runStageAction('2')">
+              <span id="spinnerStep3" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+              <span class="step-num-badge">3</span>
+              <span id="txtStep3">Step 3: 마스터 시트 3종 생성</span>
+            </button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <!-- Master Characters Sheet -->
+          <div>
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">
+              <span>캐릭터 마스터 시트</span>
+            </div>
+            <div class="media-preview-box ratio-16-9" id="previewMasterCharacters">
+              <span class="media-placeholder">생성 대기 중</span>
+            </div>
+          </div>
+          <!-- Master Scenes Sheet -->
+          <div>
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">
+              <span>배경 마스터 시트</span>
+            </div>
+            <div class="media-preview-box ratio-16-9" id="previewMasterScenes">
+              <span class="media-placeholder">생성 대기 중</span>
+            </div>
+          </div>
+          <!-- Master Props Sheet -->
+          <div>
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">
+              <span>소품 마스터 시트</span>
+            </div>
+            <div class="media-preview-box ratio-16-9" id="previewMasterProps">
+              <span class="media-placeholder">생성 대기 중</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual Sliced Asset Cards -->
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-main);">
+        분할된 개별 에셋 (인물 전신 sheet.png + 고해상도 얼굴 face.png)
+      </div>
+      <div class="grid-cards" id="individualAssetsGrid">
+        <!-- Rendered asset cards -->
+      </div>
+    </div>
+
+    <!-- TAB 4: 이미지 (Keyframes) -->
+    <div id="tab-keyframes" class="tab-panel">
+      <div class="card" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <span style="font-weight: 600; font-size: 14px;">세그먼트별 9:16 시작 키프레임 (First Frame)</span>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+            등장인물(sheet.png + face.png) + 배경(base.png)이 자동 조합되어 단일 9:16 풀스크린으로 생성됩니다.
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="btnStep4MissingKeyframes" class="btn btn-tonal btn-step" onclick="runStageAction('4', { skipExisting: true })">
+            <span id="spinnerStep4Missing" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+            <span id="txtStep4Missing">⚡ 미생성 키프레임만 이어서 생성</span>
+          </button>
+          <button id="btnStep4Keyframes" class="btn btn-primary btn-step" onclick="runStageAction('4')">
+            <span id="spinnerStep4" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+            <span class="step-num-badge">4</span>
+            <span id="txtStep4">Step 4: 전체 키프레임 생성</span>
+          </button>
+        </div>
+      </div>
+      <div class="grid-cards" id="keyframesGrid">
+        <!-- Rendered keyframe cards -->
+      </div>
+    </div>
+
+    <!-- TAB 5: 영상 (Takes & Final Cut) -->
+    <div id="tab-takes" class="tab-panel">
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">
+          <span>Step 5: 최종 완성본 & 비디오 렌더링 (24fps 시네마틱 + 와이드 1줄 자막)</span>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-step" onclick="runStageAction('6')">
+              🔄 자막/합본만 재편집
+            </button>
+            <button id="btnStep5MissingTakes" class="btn btn-tonal btn-step" onclick="runStageAction('5', { skipExisting: true })">
+              <span id="spinnerStep5Missing" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+              <span id="txtStep5Missing">⚡ 미생성 영상만 이어서 생성 & 최종 컷</span>
+            </button>
+            <button id="btnStep5Takes" class="btn btn-primary btn-step" onclick="runStageAction('5')">
+              <span id="spinnerStep5" style="display: none; animation: spin 1s linear infinite;">⏳</span>
+              <span class="step-num-badge">5</span>
+              <span id="txtStep5">Step 5: 전체 영상 렌더링 & 최종 컷</span>
+            </button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: center;">
+          <div class="media-preview-box ratio-9-16" id="finalCutPlayerBox">
+            <span class="media-placeholder">최종 합본 영상 없음</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 13px; color: var(--text-secondary);">
+              <strong>표준 규격:</strong> 9:16 세로형 (720x1280), 24fps 전역 고정, 한국어 의미 호흡 단위 40px 와이드 1줄 볼드 자막.
+            </div>
+            <div id="dialogueReviewSummary" style="font-size:13px;color:#9a4b00;"></div>
+            <div style="display: flex; gap: 12px;">
+              <a id="downloadFinalCutBtn" class="btn btn-secondary" style="display: none;" download>📥 자막 내장본 다운로드</a>
+              <a id="downloadCleanCutBtn" class="btn btn-secondary" style="display: none;" download>🎞️ 클린 무자막본 다운로드</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segment Takes Grid -->
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-main);">
+        세그먼트별 비디오 테이크 (원본에는 자막 없음 · 자막은 위 최종 합본에서 확인)
+      </div>
+      <div class="grid-cards" id="takesGrid">
+        <!-- Rendered take cards -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Log / Job Drawer -->
+  <div class="status-bar">
+    <div class="status-indicator">
+      <div id="statusDot" class="dot"></div>
+      <span id="statusText">준비 완료 (Idle)</span>
+    </div>
+    <div id="statusRecentLog" style="font-family: monospace; font-size: 11px; color: var(--text-muted); max-width: 60%;">
+      Ready.
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- New Drama Project Modal -->
+  <div id="newProjectModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>새 드라마 프로젝트 생성</span>
+        <button onclick="closeNewProjectModal()" style="background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">프로젝트 영문 식별자 (폴더명):</label>
+        <input type="text" id="newProjectNameInput" class="select-input" style="width: 100%;" placeholder="예: revenge_heiress" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeNewProjectModal()">취소</button>
+        <button class="btn btn-primary" onclick="submitCreateProject()">생성하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script for Interactivity -->
+  <script>
+    /* Minimal Google Toast System (Completely replaces browser alert() popups) */
+    function showToast(msg, type = "info") {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      t.innerText = msg;
+      container.appendChild(t);
+      setTimeout(() => t.classList.add("show"), 10);
+      setTimeout(() => {
+        t.classList.remove("show");
+        setTimeout(() => t.remove(), 250);
+      }, 3500);
+    }
+
+    let currentProject = "dementia_mother_clean_v2";
+    let projectData = {};
+    let availableModels = {};
+    let projectEpoch = 0;
+    let editorProject = null;
+    let editorSavedText = "";
+    const screenplayDrafts = new Map();
+
+    // Initialization
+    window.addEventListener("DOMContentLoaded", async () => {
+      await loadModels();
+      await loadProjects();
+      startStatusPolling();
+    });
+
+    async function loadModels() {
+      try {
+        const res = await fetch("/api/models");
+        availableModels = await res.json();
+        const vSelect = document.getElementById("globalVideoModel");
+        const iSelect = document.getElementById("globalImageModel");
+        
+        vSelect.innerHTML = availableModels.video.map(m => 
+          `<option value="${m.id}">[${m.tier.toUpperCase()}] ${m.name} (${m.credits})</option>`
+        ).join("");
+        vSelect.value = availableModels.default_video || "seedance_2_0_mini";
+
+        iSelect.innerHTML = availableModels.image.map(m => 
+          `<option value="${m.id}">[${m.tier.toUpperCase()}] ${m.name} (${m.credits})</option>`
+        ).join("");
+      } catch (e) {
+        console.error("Failed to load models:", e);
+      }
+    }
+
+    async function switchProject(projectName) {
+      const editor = document.getElementById("screenplayEditor");
+      if (editorProject && editor && editor.value !== editorSavedText) screenplayDrafts.set(editorProject, editor.value);
+      projectEpoch++;
+      editorProject = null;
+      editorSavedText = "";
+      if (editor) { editor.value = ""; editor.disabled = true; }
+      projectData = {};
+      currentProject = projectName;
+      selectedSynopsisIndex = null;
+      localStorage.setItem("short_drama_active_project", projectName);
+      await refreshProjectData();
+    }
+
+    async function loadProjects() {
+      try {
+        const res = await fetch("/api/projects");
+        const projects = await res.json();
+        const sel = document.getElementById("projectSelect");
+        if (!sel || !projects || projects.length === 0) return;
+
+        sel.innerHTML = projects.map(p => `<option value="${p}">${p}</option>`).join("");
+        
+        // Remember previously selected project in localStorage
+        const savedProject = localStorage.getItem("short_drama_active_project");
+        let targetProject;
+        if (savedProject && projects.includes(savedProject)) {
+          targetProject = savedProject;
+        } else if (projects.includes("rolex_chairman")) {
+          targetProject = "rolex_chairman";
+        } else if (projects.length > 0) {
+          targetProject = projects[0];
+        }
+
+        sel.value = targetProject;
+
+        const savedTab = localStorage.getItem("short_drama_active_tab");
+        if (savedTab && document.getElementById(`tab-${savedTab}`)) {
+          switchTab(savedTab);
+        }
+
+        await switchProject(targetProject);
+      } catch (e) {
+        console.error("Failed to load projects:", e);
+      }
+    }
+
+    async function refreshProjectData() {
+      const requestedProject = currentProject;
+      const requestedEpoch = projectEpoch;
+      try {
+        const res = await fetch(`/api/project_data?project=${encodeURIComponent(requestedProject)}`);
+        const data = await res.json();
+        if (requestedProject !== currentProject || requestedEpoch !== projectEpoch || data.project !== requestedProject) return;
+        projectData = data;
+        renderScreenplayTab();
+        renderBreakdownTab();
+        renderAssetsTab();
+        renderKeyframesTab();
+        renderTakesTab();
+        updateWizardSteps();
+      } catch (e) {
+        console.error("Failed to refresh project data:", e);
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick")?.includes(tabId));
+      if (targetBtn) targetBtn.classList.add("active");
+      const panel = document.getElementById(`tab-${tabId}`);
+      if (panel) panel.classList.add("active");
+      localStorage.setItem("short_drama_active_tab", tabId);
+    }
+
+    /* Dynamic Wizard Step Highlighter based on real project assets */
+    function updateWizardSteps() {
+      const rawScript = (projectData.screenplay || '').trim();
+      const isDefaultStub = /^Title:\s*New Short Drama(?:\s+EXT\.\s*STREET\s*-\s*NIGHT)?$/i.test(rawScript);
+      const hasScript = rawScript.length > 60 && !isDefaultStub;
+      const hasBible = (projectData.bible?.characters || []).length > 0;
+      const hasBreakdown = (projectData.breakdown?.segments || []).length > 0;
+      const characterPages = projectData.master_urls?.character_pages;
+      const hasCharacterSheets = characterPages?.length ? characterPages.every(Boolean) : !!projectData.master_urls?.characters;
+      const hasMasterSheets = !!(hasCharacterSheets && projectData.master_urls?.scenes);
+      const hasSlicedAssets = Object.values(projectData.assets?.characters || {}).some(c => c.sheet_status?.exists);
+      const keyframes = projectData.keyframes || [];
+      const hasKeyframes = keyframes.length > 0 && keyframes.every(k => !k.continuity_plan_pending && k.effective_mode !== 'needs_review' && (['previous_frame', 'state_reference'].includes(k.effective_mode) || k.exists));
+      const hasFinalCut = !!projectData.final_cut_url;
+
+      // Reset step buttons (5 steps now)
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById(`stepBtn${i}`);
+        if (!btn) continue;
+        btn.className = "btn btn-secondary";
+        const badge = btn.querySelector("span");
+        if (badge) {
+          badge.style.background = "var(--text-muted)";
+          badge.style.color = "white";
+          badge.innerText = i;
+        }
+      }
+
+      function markDone(stepNum) {
+        const btn = document.getElementById(`stepBtn${stepNum}`);
+        if (!btn) return;
+        const badge = btn.querySelector("span");
+        if (badge) {
+          badge.style.background = "var(--google-green)";
+          badge.style.color = "white";
+          badge.innerHTML = "✓";
+        }
+      }
+
+      function markCurrent(stepNum) {
+        const btn = document.getElementById(`stepBtn${stepNum}`);
+        if (!btn) return;
+        btn.className = "btn btn-primary";
+        const badge = btn.querySelector("span");
+        if (badge) {
+          badge.style.background = "white";
+          badge.style.color = "var(--google-blue)";
+          badge.innerText = stepNum;
+        }
+      }
+
+      if (hasScript) markDone(1);
+      if (hasBible && hasBreakdown) markDone(2);
+      if (hasMasterSheets && hasSlicedAssets) markDone(3);
+      if (hasKeyframes) markDone(4);
+      if (hasFinalCut) markDone(5);
+
+      // Determine next recommended step (5 steps flow)
+      if (!hasScript) markCurrent(1);
+      else if (!hasBible || !hasBreakdown) markCurrent(2);
+      else if (!hasMasterSheets || !hasSlicedAssets) markCurrent(3);
+      else if (!hasKeyframes) markCurrent(4);
+      else markCurrent(5);
+    }
+
+    function goToStep(stepNum) {
+      if (stepNum === 1) {
+        switchTab('screenplay');
+      } else if (stepNum === 2) {
+        switchTab('breakdown');
+      } else if (stepNum === 3) {
+        switchTab('assets');
+      } else if (stepNum === 4) {
+        switchTab('keyframes');
+      } else if (stepNum === 5) {
+        switchTab('takes');
+      }
+    }
+
+    /* 1. Screenplay Tab */
+    let selectedSynopsisIndex = null;
+
+    function renderProposalReview() {
+      const box = document.getElementById("proposalReviewSummary");
+      const codes = projectData.proposal_review?.codes || [];
+      if (!projectData.proposals?.items) { box.textContent = ""; return; }
+      const messages = {
+        option_count: "시놉시스가 3안인지 확인해 주세요.",
+        unclassified_options: "이전 제안에는 장르·후킹 유형 태그가 없어 다양성을 자동 비교할 수 없습니다.",
+        repeated_engine: "같은 반전 구조가 반복됩니다. 다른 장르 구조의 대안을 요청해 보세요.",
+        repeated_hook: "첫 장면의 후킹 방식이 반복됩니다. 다른 시작 장면을 요청해 보세요.",
+        missing_hook: "첫 화면에서 벌어지는 사건이 빠진 안이 있습니다.",
+        missing_protagonist_choice: "주인공이 감수하고 선택하는 행동이 빠진 안이 있습니다.",
+        missing_reveal_evidence: "반전을 믿게 할 초반 단서나 증거가 빠진 안이 있습니다.",
+        missing_payoff_action: "반전 뒤 달라지는 실제 행동이 빠진 안이 있습니다."
+      };
+      box.textContent = codes.length ? codes.map(code => messages[code] || code).join("\n") : "장르·후킹 다양성과 선택·증거·결말 행동이 기재됐습니다. 내용의 설득력은 직접 검토해 주세요.";
+    }
+
+    function buildProposalCardsHtml(items) {
+      return items.map((it, idx) => `
+        <div class="synopsis-card ${selectedSynopsisIndex === idx ? 'selected' : ''}" onclick="selectSynopsis(${idx})">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
+            <div style="font-weight: 600; font-size: 13px; color: var(--google-blue);">${it.title || ''}</div>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+              ${it.genre_engine ? `<span style="font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #E8F0FE; color: var(--google-blue);">${it.genre_engine}</span>` : ''}
+              ${it.hook_type ? `<span style="font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #E6F4EA; color: var(--google-green);">${it.hook_type}</span>` : ''}
+            </div>
+          </div>
+          <div style="font-size: 12px; color: var(--text-main); margin-bottom: 6px; font-weight: 500;">
+            ${it.logline || ''}
+          </div>
+          <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; background: #F1F3F4; padding: 6px 8px; border-radius: 4px;">
+            <div><strong>⚡ 후킹:</strong> ${it.hook || ''}</div>
+            <div><strong>❓ 질문:</strong> ${it.bridge || ''}</div>
+            <div><strong>💡 회수:</strong> ${it.aha || ''}</div>
+            <div><strong>🎬 클라이맥스:</strong> ${it.payoff || ''}</div>
+            ${it.protagonist_choice ? `<div><strong>↪ 선택:</strong> ${it.protagonist_choice}</div>` : ''}
+            ${it.reveal_evidence ? `<div><strong>🔎 반전 근거:</strong> ${it.reveal_evidence}</div>` : ''}
+            ${it.payoff_action ? `<div><strong>✓ 마지막 행동:</strong> ${it.payoff_action}</div>` : ''}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderScreenplayTab() {
+      const editor = document.getElementById("screenplayEditor");
+      if (editorProject === currentProject && editor.value !== editorSavedText) screenplayDrafts.set(currentProject, editor.value);
+      editorSavedText = projectData.screenplay || "";
+      editor.value = screenplayDrafts.has(currentProject) ? screenplayDrafts.get(currentProject) : editorSavedText;
+      editorProject = currentProject;
+      editor.disabled = false;
+      renderProposalsOnly();
+    }
+
+    function selectSynopsis(idx) {
+      selectedSynopsisIndex = idx;
+      renderProposalsOnly();
+    }
+
+    function updateDurationBadge(val) {
+      const b = document.getElementById("targetDurationBadge");
+      if (["30", "60", "90", "120"].includes(val)) b.innerText = `약 ${val}초`;
+    }
+
+    async function saveScreenplay() {
+      const content = document.getElementById("screenplayEditor")?.value || "";
+      const savingProject = currentProject;
+      if (editorProject !== savingProject) { showToast("프로젝트 대본을 불러온 후 저장해 주세요.", "warning"); return; }
+      try {
+        const res = await fetch("/api/save_screenplay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: savingProject, content })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (currentProject === savingProject && editorProject === savingProject) {
+            projectEpoch++;
+            projectData.screenplay = content;
+            editorSavedText = content;
+            screenplayDrafts.delete(savingProject);
+          }
+          showToast("대본이 저장되었습니다!", "success");
+        } else {
+          showToast("대본 저장 실패: " + (data.error || "알 수 없는 오류"), "error");
+        }
+      } catch (e) {
+        showToast("대본 저장 중 오류: " + e.message, "error");
+      }
+    }
+
+    async function saveBibleData() {
+      const bible = projectData.bible || {};
+      if (!bible.characters || !bible.scenes) {
+        showToast("저장할 스토리 바이블 데이터가 없습니다. 먼저 [대본에서 자동 생성]을 실행해 주세요.", "warning");
+        return;
+      }
+      bible.title = document.getElementById("bibleTitle")?.value || bible.title || "";
+      bible.logline = document.getElementById("bibleLogline")?.value || bible.logline || "";
+      try {
+        const res = await fetch("/api/save_bible", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: currentProject, bible_data: bible })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast("스토리 바이블이 저장되었습니다!", "success");
+          await refreshProjectData();
+        } else {
+          showToast("바이블 저장 실패: " + (data.error || "스키마 검증 오류"), "error");
+        }
+      } catch (e) {
+        showToast("바이블 저장 중 오류: " + e.message, "error");
+      }
+    }
+
+    function overrideAsset(assetId, assetType = "characters") {
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/*";
+      picker.onchange = () => {
+        const file = picker.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const res = await fetch("/api/override_asset", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                project: currentProject,
+                asset_id: assetId,
+                asset_type: assetType,
+                image_data: reader.result
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              showToast(`'${assetId}' 이미지가 수동 교체되었습니다!`, "success");
+              await refreshProjectData();
+            } else {
+              showToast("수동 교체 실패: " + (data.error || "알 수 없는 오류"), "error");
+            }
+          } catch (e) {
+            showToast("수동 교체 중 오류: " + e.message, "error");
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      picker.click();
+    }
+
+    async function reRollKeyframe(segmentId) {
+      const selectedImgModel = document.getElementById("globalImageModel")?.value;
+      try {
+        const res = await fetch("/api/reroll_keyframe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            project: currentProject,
+            segment_id: segmentId,
+            model: selectedImgModel
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`${segmentId} 키프레임 단독 리롤이 시작되었습니다! 완료 시 자동 반영됩니다.`, "info");
+        } else {
+          showToast("단독 리롤 실패: " + (data.error || "알 수 없는 오류"), "error");
+        }
+      } catch (e) {
+        showToast("단독 리롤 요청 중 오류: " + e.message, "error");
+      }
+    }
+
+    async function reRenderTake(segmentId) {
+      const selectedVidModel = document.getElementById("globalVideoModel")?.value;
+      try {
+        const res = await fetch("/api/rerender_take", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            project: currentProject,
+            segment_id: segmentId,
+            model: selectedVidModel,
+            image_model: document.getElementById("globalImageModel")?.value
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`${segmentId} 비디오 단독 렌더링이 시작되었습니다! 완료 시 자동 반영됩니다.`, "info");
+        } else {
+          showToast("단독 렌더링 실패: " + (data.error || "알 수 없는 오류"), "error");
+        }
+      } catch (e) {
+        showToast("단독 렌더링 요청 중 오류: " + e.message, "error");
+      }
+    }
+
+    async function generateBibleFromScript() {
+      const btn1 = document.getElementById("btnGenerateBibleFromScript");
+      const btn2 = document.getElementById("btnGenerateBibleTab2");
+      const txt1 = document.getElementById("txtStep2Tab1");
+      const txt2 = document.getElementById("txtStep2Tab2");
+      const sp1 = document.getElementById("spinnerStep2Tab1");
+      const sp2 = document.getElementById("spinnerStep2Tab2");
+      const setBusy = (busy) => {
+        if (btn1) btn1.disabled = busy;
+        if (btn2) btn2.disabled = busy;
+        if (sp1) sp1.style.display = busy ? "inline-block" : "none";
+        if (sp2) sp2.style.display = busy ? "inline-block" : "none";
+        if (txt1) txt1.innerText = busy ? "Step 2: 바이블·브레이크다운 생성 중..." : "Step 2: 바이블·브레이크다운 생성";
+        if (txt2) txt2.innerText = busy ? "Step 2: 바이블·브레이크다운 생성 중..." : "Step 2: 바이블·브레이크다운 재생성";
+      };
+
+      setBusy(true);
+      try {
+        // Save any unsaved edits in the screenplay editor first
+        const editorEl = document.getElementById("screenplayEditor");
+        const targetProject = currentProject;
+        if (editorProject !== targetProject) throw new Error("프로젝트 대본을 불러온 후 다시 시도해 주세요.");
+        if (editorEl && editorEl.value.trim()) {
+          const savedContent = editorEl.value;
+          const saveRes = await fetch("/api/save_screenplay", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ project: targetProject, content: savedContent })
+          });
+          const saveData = await saveRes.json();
+          if (!saveRes.ok || !saveData.success) throw new Error(saveData.error || "대본 저장 실패");
+          if (currentProject === targetProject && editorProject === targetProject) {
+            projectEpoch++;
+            editorSavedText = savedContent;
+            screenplayDrafts.delete(targetProject);
+          }
+        }
+        if (currentProject !== targetProject || editorProject !== targetProject) throw new Error("프로젝트가 바뀌어 생성을 중단했습니다.");
+
+        const res = await fetch("/api/bridge/generate_bible_breakdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: currentProject, episode: "EP001" })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "바이블·브레이크다운 생성 요청 실패");
+        }
+
+        showToast("Antigravity가 대본을 분석해 바이블(인물/장소/소품)과 컷별 브레이크다운을 생성 중입니다! (약 30~90초 소요)", "info");
+        goToStep(2);
+
+        const reqId = data.request?.id;
+        if (!reqId) {
+          setBusy(false);
+          return;
+        }
+
+        pollBridgeRequest(reqId, {
+          timeoutMs: 900000,
+          onComplete: () => {
+            showToast("스토리 바이블 & 브레이크다운 생성이 완료되었습니다!", "success");
+            setBusy(false);
+          },
+          onError: (msg) => {
+            showToast("바이블·브레이크다운 생성 실패: " + msg, "error");
+            setBusy(false);
+          }
+        });
+      } catch (e) {
+        showToast("요청 중 오류가 발생했습니다: " + e.message, "error");
+        setBusy(false);
+      }
+    }
+
+    function pollBridgeRequest(reqId, { onComplete, onError, timeoutMs = 660000 }) {
+      const startedAt = Date.now();
+      const timer = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/bridge/status?id=${encodeURIComponent(reqId)}`);
+          const statusData = await statusRes.json();
+          const req = statusData.request;
+
+          if (req && req.status === "completed") {
+            clearInterval(timer);
+            await refreshProjectData();
+            if (onComplete) onComplete(req);
+            return;
+          }
+          if (req && req.status === "error") {
+            clearInterval(timer);
+            if (onError) onError(req.error || "Antigravity 브릿지 실행 중 오류가 발생했습니다.");
+            return;
+          }
+          if (Date.now() - startedAt > timeoutMs) {
+            clearInterval(timer);
+            if (onError) onError("응답 대기 시간(3분 30초)을 초과했습니다. 서버 로그를 확인해 주세요.");
+          }
+        } catch (err) {
+          if (Date.now() - startedAt > timeoutMs) {
+            clearInterval(timer);
+            if (onError) onError("브릿지 상태 확인 중 네트워크 오류: " + err);
+          }
+        }
+      }, 2000);
+    }
+
+    async function applySelectedSynopsis() {
+      if (selectedSynopsisIndex === null) return;
+      const targetDuration = document.getElementById("targetDurationSelect")?.value || "60";
+      const applyBtn = document.getElementById("btnApplySynopsis");
+      applyBtn.disabled = true;
+      applyBtn.innerText = "⏳ 안티그래비티 대본 생성 중...";
+
+      try {
+        const res = await fetch("/api/bridge/apply_synopsis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            project: currentProject, 
+            synopsis_index: selectedSynopsisIndex,
+            target_duration: targetDuration
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "대본 생성 요청 실패");
+        }
+        showToast("선택한 시놉시스로 Antigravity 대본 생성이 시작되었습니다!", "info");
+
+        const reqId = data.request?.id;
+        if (!reqId) {
+          applyBtn.disabled = false;
+          applyBtn.innerText = "✍️ 선택한 시놉시스로 전체 대본 생성";
+          return;
+        }
+
+        pollBridgeRequest(reqId, {
+          onComplete: () => {
+            showToast("전체 대본 생성이 완료되어 편집기에 반영되었습니다!", "success");
+            applyBtn.disabled = false;
+            applyBtn.innerText = "✍️ 선택한 시놉시스로 전체 대본 생성";
+          },
+          onError: (msg) => {
+            showToast("대본 생성 실패: " + msg, "error");
+            applyBtn.disabled = false;
+            applyBtn.innerText = "✍️ 선택한 시놉시스로 전체 대본 생성";
+          }
+        });
+      } catch (e) {
+        showToast("대본 생성 요청 중 오류가 발생했습니다: " + e.message, "error");
+        applyBtn.disabled = false;
+        applyBtn.innerText = "✍️ 선택한 시놉시스로 전체 대본 생성";
+      }
+    }
+
+    async function requestSynopsisFromAntigravity() {
+      const url = document.getElementById("refUrlInput").value.trim();
+      const notes = document.getElementById("refNotesInput").value.trim();
+      if (!url) {
+        showToast("레퍼런스 영상 URL을 입력해 주세요.", "warning");
+        return;
+      }
+
+      // UI Loading state with Hourglass
+      const btn = document.getElementById("btnRequestSynopsis");
+      const spinner = document.getElementById("synopsisSpinner");
+      const btnText = document.getElementById("synopsisBtnText");
+      btn.disabled = true;
+      spinner.style.display = "inline-block";
+      btnText.innerText = "안티그래비티 기획 중...";
+
+      try {
+        const res = await fetch("/api/bridge/request_synopsis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: currentProject, url, notes })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "시놉시스 요청 실패");
+        }
+
+        showToast("Antigravity가 레퍼런스 분석 및 3색 시놉시스 기획을 시작했습니다!", "info");
+        const reqId = data.request?.id;
+        if (!reqId) {
+          btn.disabled = false;
+          spinner.style.display = "none";
+          btnText.innerText = "시놉시스 요청";
+          return;
+        }
+
+        pollBridgeRequest(reqId, {
+          onComplete: () => {
+            selectedSynopsisIndex = null;
+            renderProposalsOnly();
+            showToast("3색 시놉시스 제안이 도착했습니다! 마음에 드는 안을 선택해 주세요.", "success");
+            btn.disabled = false;
+            spinner.style.display = "none";
+            btnText.innerText = "시놉시스 요청";
+          },
+          onError: (msg) => {
+            showToast("시놉시스 생성 실패: " + msg, "error");
+            btn.disabled = false;
+            spinner.style.display = "none";
+            btnText.innerText = "시놉시스 요청";
+          }
+        });
+
+      } catch (e) {
+        showToast("요청 중 오류가 발생했습니다: " + e.message, "error");
+        btn.disabled = false;
+        spinner.style.display = "none";
+        btnText.innerText = "시놉시스 요청";
+      }
+    }
+
+    async function sendFeedbackToAntigravity() {
+      const input = document.getElementById("scriptFeedbackInput");
+      const feedback = input.value.trim();
+      if (!feedback) {
+        showToast("수정 요청 내용을 입력해 주세요.", "warning");
+        return;
+      }
+      input.disabled = true;
+      try {
+        const res = await fetch("/api/bridge/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: currentProject, feedback })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "수정 요청 실패");
+        }
+        showToast(`Antigravity가 피드백을 반영해 대본을 수정 중입니다...`, "info");
+        input.value = "";
+        pollBridgeRequest(data.request.id, {
+          onComplete: () => {
+            showToast("대본 수정이 완료되어 편집기에 반영되었습니다!", "success");
+            input.disabled = false;
+          },
+          onError: (msg) => {
+            showToast("대본 수정 실패: " + msg, "error");
+            input.disabled = false;
+          }
+        });
+      } catch (e) {
+        showToast("피드백 전송 중 오류가 발생했습니다: " + e.message, "error");
+        input.disabled = false;
+      }
+    }
+
+    /* 2. Bible & Breakdown Tab */
+    function renderBreakdownTab() {
+      const bible = projectData.bible || {};
+      document.getElementById("bibleTitle").value = bible.title || "";
+      document.getElementById("bibleLogline").value = bible.logline || "";
+
+      // Characters
+      const charBox = document.getElementById("bibleCharactersList");
+      charBox.innerHTML = (bible.characters || []).map(c => `
+        <div style="padding: 8px; background: var(--surface-variant); border-radius: 4px; font-size: 12px;">
+          <strong>${c.name}</strong> (${c.role}): ${c.appearance || c.look || ''}
+        </div>
+      `).join("") || "<span style='font-size:12px; color:var(--text-muted);'>인물 정보 없음</span>";
+
+      // Scenes
+      const sceneBox = document.getElementById("bibleScenesList");
+      sceneBox.innerHTML = (bible.scenes || []).map(s => `
+        <div style="padding: 8px; background: var(--surface-variant); border-radius: 4px; font-size: 12px;">
+          <strong>${s.name}</strong>: ${s.description || ''}
+        </div>
+      `).join("") || "<span style='font-size:12px; color:var(--text-muted);'>장소 정보 없음</span>";
+
+      // Breakdown segments (Directly Editable inputs)
+      const segBox = document.getElementById("segmentsListContainer");
+      const breakdown = projectData.breakdown || {};
+      const reviewBox = document.getElementById("storyReviewSummary");
+      const findings = projectData.story_review?.findings || [];
+      reviewBox.textContent = findings.length
+        ? `대본·영상 검수 제안 ${findings.length}건 (저장은 막지 않습니다)\n` + findings.map(f => `${f.segment_id}: ${f.message}`).join("\n")
+        : "대본·영상 기본 검수: 발견된 항목 없음";
+      segBox.innerHTML = (breakdown.segments || []).map((seg, idx) => `
+        <div class="card" style="padding: 12px; background: #FAFAFA;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: 700; font-size: 13px; color: var(--google-blue);">${seg.id}</span>
+              <input type="number" id="segDuration_${idx}" class="select-input" style="width: 60px; padding: 2px 6px; font-size: 12px;" value="${seg.duration || 5}" min="4" max="15" step="1" /> 초
+            </div>
+            <span style="font-size: 11px; color: var(--text-secondary);">${seg.scene_heading || ''}</span>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">시작 화면 상태 (First State):</label>
+            <input type="text" id="segFirstState_${idx}" class="select-input" style="width: 100%; font-size: 12px;" value="${(seg.first_state || '').replace(/"/g, '&quot;')}" />
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;">대사 (Dialogue):</label>
+            <input type="text" id="segDialogue_${idx}" class="select-input" style="width: 100%; font-size: 12px; font-weight: 500;" value="${((seg.dialogue || []).map(d => `${d.speaker}: ${d.line}`).join(" / ")).replace(/"/g, '&quot;')}" />
+          </div>
+        </div>
+      `).join("") || "<div style='text-align:center; padding: 30px; color: var(--text-muted);'>브레이크다운 세그먼트가 없습니다.</div>";
+    }
+
+    /* 3. Assets Tab */
+    async function saveEditedBreakdownData() {
+      const breakdown = projectData.breakdown || {};
+      const segments = breakdown.segments || [];
+      const selectedModel = document.getElementById("globalVideoModel")?.value;
+      if (selectedModel === 'seedance_2_0') {
+        for (let idx = 0; idx < segments.length; idx++) {
+          const input = document.getElementById(`segDuration_${idx}`);
+          const value = Number(input?.value);
+          if (!input || !input.value || !Number.isInteger(value) || value < 4 || value > 15) {
+            showToast(`${segments[idx].id}: Seedance 2.0 길이는 4~15초 정수여야 합니다.`, "error");
+            if (input) input.focus();
+            return;
+          }
+        }
+      }
+      segments.forEach((seg, idx) => {
+        const durInput = document.getElementById(`segDuration_${idx}`);
+        const stateInput = document.getElementById(`segFirstState_${idx}`);
+        const diaInput = document.getElementById(`segDialogue_${idx}`);
+        if (durInput) seg.duration = parseFloat(durInput.value) || seg.duration;
+        if (stateInput) seg.first_state = stateInput.value;
+        if (diaInput) {
+          const raw = diaInput.value.trim();
+          if (raw) {
+            seg.dialogue = raw.split(" / ").map(item => {
+              const parts = item.split(":");
+              return { speaker: parts[0]?.trim() || "speaker", line: parts[1]?.trim() || item };
+            });
+          }
+        }
+      });
+
+      const res = await fetch("/api/save_breakdown", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project: currentProject, episode: "EP001", breakdown_data: breakdown })
+      });
+      const data = await res.json();
+      if (data.success) showToast("수정한 브레이크다운이 성공적으로 저장되었습니다!", "success");
+    }
+
+    async function sendBreakdownFeedback() {
+      const input = document.getElementById("breakdownFeedbackInput");
+      const fb = input?.value?.trim();
+      if (!fb) {
+        showToast("수정 피드백 내용을 입력해 주세요.", "warning");
+        return;
+      }
+      input.disabled = true;
+      try {
+        const res = await fetch("/api/bridge/breakdown_feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project: currentProject, episode: "EP001", feedback: fb })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "브레이크다운 피드백 전송 실패");
+        }
+        showToast("Antigravity가 피드백을 반영해 브레이크다운을 재생성 중입니다...", "info");
+        input.value = "";
+        pollBridgeRequest(data.request.id, {
+          timeoutMs: 240000,
+          onComplete: () => {
+            showToast("브레이크다운 수정이 완료되었습니다!", "success");
+            input.disabled = false;
+          },
+          onError: (msg) => {
+            showToast("브레이크다운 수정 실패: " + msg, "error");
+            input.disabled = false;
+          }
+        });
+      } catch (e) {
+        showToast("피드백 전송 중 오류가 발생했습니다: " + e.message, "error");
+        input.disabled = false;
+      }
+    }
+
+    /* 3. Assets Tab */
+    function renderAssetsTab() {
+      const mUrls = projectData.master_urls || {};
+      if (mUrls.character_pages?.length > 1) {
+        const box = document.getElementById('previewMasterCharacters');
+        if (box) box.innerHTML = `<div style="display:flex;gap:8px;overflow-x:auto;width:100%;height:100%;">${mUrls.character_pages.map((url,i) => url ? `<img src="${url}" alt="캐릭터 시트 ${i+1}" style="width:100%;height:100%;object-fit:contain;flex-shrink:0;" />` : `<span class="media-placeholder" style="min-width:100%;">캐릭터 시트 ${i+1} 생성 대기</span>`).join('')}</div>`;
+      } else {
+        setMediaBox("previewMasterCharacters", mUrls.characters, "image");
+      }
+      setMediaBox("previewMasterScenes", mUrls.scenes, "image");
+      setMediaBox("previewMasterProps", mUrls.props, "image");
+
+      const grid = document.getElementById("individualAssetsGrid");
+      const assets = projectData.assets || {};
+      let cardsHtml = "";
+
+      // Characters
+      for (const [id, c] of Object.entries(assets.characters || {})) {
+        cardsHtml += `
+          <div class="asset-card">
+            <div class="media-preview-box ratio-9-16">
+              ${c.web_url ? `<img src="${c.web_url}" />` : '<span class="media-placeholder">전신 시트 없음</span>'}
+            </div>
+            <div class="card-details">
+              <div>
+                <div class="item-name">${c.character?.name || id} (${c.character?.role || ''})</div>
+                <div class="item-desc">${c.character?.appearance || ''}</div>
+              </div>
+              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 11px; font-weight: 600; color: var(--google-blue);">
+                  ${c.face_web_url ? '✅ 고해상도 face.png 추출됨' : 'face.png 없음'}
+                </span>
+                <button class="btn btn-secondary" style="font-size: 11px; padding: 2px 6px;" onclick="overrideAsset('${id}')">수동 교체</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Scenes
+      for (const [id, s] of Object.entries(assets.scenes || {})) {
+        cardsHtml += `
+          <div class="asset-card">
+            <div class="media-preview-box ratio-16-9">
+              ${s.web_url ? `<img src="${s.web_url}" />` : '<span class="media-placeholder">배경 이미지 없음</span>'}
+            </div>
+            <div class="card-details">
+              <div>
+                <div class="item-name">🏠 ${s.scene?.name || id}</div>
+                <div class="item-desc">${s.scene?.description || ''}</div>
+              </div>
+              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: flex-end;">
+                <button class="btn btn-secondary" style="font-size: 11px; padding: 2px 6px;" onclick="overrideAsset('${id}', 'scenes')">수동 교체</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Props (Sliced Hero Objects)
+      for (const [id, p] of Object.entries(assets.props || {})) {
+        cardsHtml += `
+          <div class="asset-card">
+            <div class="media-preview-box ratio-16-9">
+              ${p.web_url ? `<img src="${p.web_url}" />` : '<span class="media-placeholder">소품 이미지 없음</span>'}
+            </div>
+            <div class="card-details">
+              <div>
+                <div class="item-name">🧩 ${p.prop?.name || id}</div>
+                <div class="item-desc">${p.prop?.description || ''}</div>
+              </div>
+              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: flex-end;">
+                <button class="btn btn-secondary" style="font-size: 11px; padding: 2px 6px;" onclick="overrideAsset('${id}', 'props')">수동 교체</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = cardsHtml || "<div style='color: var(--text-muted);'>에셋이 없습니다.</div>";
+    }
+
+    /* 4. Keyframes Tab */
+    function continuityAutoLabel(mode) {
+      return ({previous_frame:'이전 영상 연결', state_reference:'이전 영상 참고 새 구도', keyframe:'독립 키프레임', needs_review:'확인 필요'})[mode] || '판별 대기';
+    }
+    function summarizeKeyframeRefs(refs) {
+      const list = Array.isArray(refs) ? refs : [];
+      if (list.length === 0) {
+        return `<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #FCE8E6; color: #C5221F; font-weight: 600;">⚠️ 레퍼런스 0장 (에셋 먼저 생성)</span>`;
+      }
+      const chars = new Set();
+      const scenes = new Set();
+      const props = new Set();
+      for (const p of list) {
+        const s = String(p).replace(/\\/g, "/");
+        const mChar = s.match(/assets\/characters\/([^/]+)\//);
+        const mScene = s.match(/assets\/scenes\/([^/]+)\//);
+        const mProp = s.match(/assets\/props\/([^/]+)\//);
+        if (mChar) chars.add(mChar[1]);
+        else if (mScene) scenes.add(mScene[1]);
+        else if (mProp) props.add(mProp[1]);
+      }
+      return `<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #E6F4EA; color: #137333; font-weight: 600;">🔗 레퍼런스 ${list.length}장 (인물 ${chars.size} · 배경 ${scenes.size} · 오브제 ${props.size})</span>`;
+    }
+
+    function renderKeyframesTab() {
+      const grid = document.getElementById("keyframesGrid");
+      const keyframes = projectData.keyframes || [];
+      grid.innerHTML = keyframes.map(kf => `
+        <div class="keyframe-card">
+          <div class="media-preview-box ratio-9-16">
+            ${kf.effective_mode === 'needs_review' ? `<span class="media-placeholder">⚠️ 연결 판정 확인 필요<br>아래 시작 화면에서 직접 선택해 주세요</span>` : kf.effective_mode === 'previous_frame' ? (kf.continuity_frame_url ? `<img src="${kf.continuity_frame_url}" alt="${kf.previous_segment_id} 영상에서 추출한 마지막 프레임" />` : `<span class="media-placeholder">🔗 ${kf.previous_segment_id} 영상에서 이어지는 씬<br>${['stale','unverified'].includes(kf.continuity_frame_status) ? '이전 추출본 확인 불가 · 다음 영상 생성 시 다시 추출' : '영상 생성 시 마지막 프레임을 추출합니다'}</span>`) : kf.effective_mode === 'state_reference' ? `<span class="media-placeholder">🔗 ${kf.previous_segment_id} 영상 상태 참고<br>장소·인물 기준과 이전 영상으로 새 구도를 생성합니다</span>` : (kf.web_url ? `<img src="${kf.web_url}" />` : `<span class="media-placeholder">${kf.continuity_plan_pending ? '연결 방식 판별 전 · 이미지 생성 대기' : '키프레임 미생성'}</span>`)}
+          </div>
+          <div class="card-details">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <div class="item-name">${kf.segment_id}</div>
+              ${kf.effective_mode === 'previous_frame' ? '<span>🔗 이어지는 씬</span>' : kf.effective_mode === 'state_reference' ? '<span>🔗 이전 영상 참고 새 구도</span>' : summarizeKeyframeRefs(kf.refs)}
+            </div>
+            ${kf.effective_mode === 'previous_frame' && kf.continuity_frame_url ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${kf.previous_segment_id} 영상에서 추출한 시작 이미지 · 해당 영상 생성의 성공 여부와 별개</div>` : ''}
+            ${kf.previous_segment_id ? `<label style="display:block;font-size:12px;margin-top:8px;">시작 화면
+              <select onchange="saveContinuityMode('${kf.segment_id}', this.value)" style="width:100%;margin-top:4px;">
+                <option value="auto" ${kf.continuity_mode === 'auto' ? 'selected' : ''}>자동 판별: ${kf.continuity_auto ? continuityAutoLabel(kf.continuity_auto.mode) : '이미지 생성 전 판별'}</option>
+                <option value="keyframe" ${kf.continuity_mode === 'keyframe' ? 'selected' : ''}>새 구도: 이 장면의 키프레임</option>
+                <option value="previous_frame" ${kf.continuity_mode === 'previous_frame' ? 'selected' : ''}>연속 동작: ${kf.previous_segment_id} 마지막 프레임</option>
+                <option value="state_reference" ${kf.continuity_mode === 'state_reference' ? 'selected' : ''}>새 구도: ${kf.previous_segment_id} 영상 상태 참고</option>
+              </select></label>` : ''}
+            ${['previous_frame','state_reference'].includes(kf.effective_mode) && kf.exists ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">기존 이미지는 보관되며 이 연결 설정에서는 사용하지 않습니다.</div>' : ''}
+            ${kf.effective_mode === 'needs_review' ? `<div style="font-size:11px;color:#b3261e;margin-top:4px;">⚠️ ${kf.continuity_auto?.reason || '자동 판정 근거가 불확실합니다.'}</div>` : ''}
+            ${kf.effective_mode === 'state_reference' ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">이전 영상과 장소·인물 기준 이미지를 영상 생성 모델에 직접 전달합니다.</div>' : ''}
+            <div class="item-desc" style="max-height: 40px; overflow: hidden; text-overflow: ellipsis;">
+              ${kf.prompt || ''}
+            </div>
+            <div style="margin-top: 8px; display: flex; justify-content: space-between;">
+              ${['previous_frame','state_reference','needs_review'].includes(kf.effective_mode) ? '' : `<button class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px;" onclick="reRollKeyframe('${kf.segment_id}')">🔄 단독 리롤</button>`}
+            </div>
+          </div>
+        </div>
+      `).join("") || "<div style='color: var(--text-muted);'>키프레임 정보가 없습니다.</div>";
+    }
+
+    /* 5. Takes & Final Cut Tab */
+    function renderTakesTab() {
+      const box = document.getElementById("finalCutPlayerBox");
+      const dlFinal = document.getElementById("downloadFinalCutBtn");
+      const dlClean = document.getElementById("downloadCleanCutBtn");
+      const review = (projectData.dialogue_review || []).filter(item => item.needs_review);
+      const takeReview = (projectData.takes || []).filter(t => t.dialogue_review?.needs_review);
+      const reviewBox = document.getElementById('dialogueReviewSummary');
+      const reviewIds = [...new Set([...review.map(item => item.segment_id), ...takeReview.map(t => t.segment_id)])];
+      if (reviewBox) reviewBox.textContent = reviewIds.length ? `⚠️ 대사 확인 필요: ${reviewIds.join(', ')}. STT와 대본 또는 영상 끝부분을 실제 음성으로 확인하세요.` : (projectData.dialogue_review?.length ? 'STT와 대본을 비교했습니다. 실제 음성 확인을 권장합니다.' : '');
+
+      if (projectData.final_cut_url) {
+        box.innerHTML = `<video src="${projectData.final_cut_url}" controls preload="metadata"></video>`;
+        dlFinal.href = projectData.final_cut_url;
+        dlFinal.style.display = "inline-flex";
+      } else {
+        box.innerHTML = '<span class="media-placeholder">최종 합본 영상 없음</span>';
+        dlFinal.style.display = "none";
+      }
+
+      if (projectData.clean_cut_url) {
+        dlClean.href = projectData.clean_cut_url;
+        dlClean.style.display = "inline-flex";
+      } else {
+        dlClean.style.display = "none";
+      }
+
+      const grid = document.getElementById("takesGrid");
+      const takes = projectData.takes || [];
+      grid.innerHTML = takes.map(t => `
+        <div class="take-card">
+          <div class="media-preview-box ratio-9-16">
+            ${t.web_url ? `<video src="${t.web_url}" controls preload="metadata"></video>` : '<span class="media-placeholder">테이크 미생성</span>'}
+          </div>
+          <div class="card-details">
+            <div class="item-name">${t.segment_id} (${t.duration}s)</div>
+            ${t.dialogue_review?.needs_review ? `<div style="font-size:12px;color:#9a4b00;margin-top:6px;">⚠️ ${t.dialogue_review.stt_error ? 'STT 검수 실패' : (t.dialogue_review.end_cut_risk ? '대사가 영상 끝에서 잘렸을 가능성' : '대본과 음성 차이 의심')} · 실제 음성 확인</div>` : (t.dialogue_review ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:6px;">STT 대사 비교 완료 · 음성 확인 권장</div>' : '')}
+            ${t.previous_segment_id ? `<label style="display:block;font-size:12px;margin-top:8px;">시작 화면
+              <select onchange="saveContinuityMode('${t.segment_id}', this.value)" style="width:100%;margin-top:4px;">
+                <option value="auto" ${t.continuity_mode === 'auto' ? 'selected' : ''}>자동 판별: ${t.continuity_auto ? continuityAutoLabel(t.continuity_auto.mode) : '영상 생성 전 판별'}</option>
+                <option value="keyframe" ${t.continuity_mode === 'keyframe' ? 'selected' : ''}>새 구도: 이 장면의 키프레임</option>
+                <option value="previous_frame" ${t.continuity_mode === 'previous_frame' ? 'selected' : ''}>연속 동작: ${t.previous_segment_id} 마지막 프레임</option>
+                <option value="state_reference" ${t.continuity_mode === 'state_reference' ? 'selected' : ''}>새 구도: ${t.previous_segment_id} 영상 상태 참고</option>
+              </select></label><div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">변경 후 이 장면을 다시 렌더링해야 적용됩니다.</div>` : ''}
+            <div style="margin-top: 8px; display: flex; justify-content: space-between;">
+              <button class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px;" onclick="reRenderTake('${t.segment_id}')">🎬 단독 렌더링</button>
+            </div>
+          </div>
+        </div>
+      `).join("") || "<div style='color: var(--text-muted);'>테이크 정보가 없습니다.</div>";
+    }
+
+    async function saveContinuityMode(segmentId, mode) {
+      try {
+        const res = await fetch('/api/continuity', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project:currentProject, segment_id:segmentId, mode})});
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || '저장 실패');
+        showToast(`${segmentId} 시작 화면 설정 저장됨. 다시 렌더링하면 적용됩니다.`, 'info');
+      } catch (error) {
+        alert('장면 연결 설정을 저장하지 못했습니다: ' + error.message);
+        await refreshProjectData();
+      }
+    }
+
+    function setMediaBox(boxId, url, type) {
+      const el = document.getElementById(boxId);
+      if (url) {
+        el.innerHTML = type === "video" ? `<video src="${url}" controls preload="metadata"></video>` : `<img src="${url}" />`;
+      } else {
+        el.innerHTML = `<span class="media-placeholder">미생성</span>`;
+      }
+    }
+
+    async function sliceSingleSheet(type) {
+      const res = await fetch("/api/slice_master_sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project: currentProject, asset_type: type })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${type} 마스터 시트 슬라이싱 및 고해상도 face.png 추출 완료!`, "success");
+        await refreshProjectData();
+      } else {
+        showToast("슬라이싱 실패: " + data.error, "error");
+      }
+    }
+
+    async function sliceAllMasterSheets() {
+      await sliceSingleSheet("characters");
+      await sliceSingleSheet("scenes");
+      await sliceSingleSheet("props");
+    }
+
+    async function runAutoPipelineFromStep3() {
+      const selectedImgModel = document.getElementById("globalImageModel")?.value;
+      const selectedVidModel = document.getElementById("globalVideoModel")?.value;
+      
+      const btn = document.getElementById("btnAutoAllPipeline");
+      const spinner = document.getElementById("spinnerAutoAll");
+      const txt = document.getElementById("txtAutoAll");
+      if (btn && spinner && txt) {
+        btn.disabled = true;
+        spinner.style.display = "inline-block";
+        txt.innerText = "전체 자동 제작 진행 중...";
+      }
+
+      showToast("원클릭 전체 자동 제작(마스터시트 ➔ 키프레임 ➔ 영상 ➔ 최종 컷)이 시작되었습니다!", "info");
+
+      const res = await fetch("/api/run_auto_pipeline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          project: currentProject, 
+          img_model: selectedImgModel, 
+          vid_model: selectedVidModel 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || "전체 파이프라인이 백그라운드에서 가동되었습니다.", "success");
+      } else {
+        showToast("파이프라인 실행 실패: " + data.error, "error");
+        if (btn && spinner && txt) {
+          btn.disabled = false;
+          spinner.style.display = "none";
+          txt.innerText = "⚡ 원클릭 전체 자동 제작 (Step 3➔5)";
+        }
+      }
+    }
+
+    async function runStageAction(stage, opts = {}) {
+      const skipExisting = !!opts.skipExisting;
+      const selectedImgModel = document.getElementById("globalImageModel")?.value;
+      const selectedVidModel = document.getElementById("globalVideoModel")?.value;
+      const targetModel = (stage === "2" || stage === "4") ? selectedImgModel : selectedVidModel;
+
+      // Visual feedback for Step 3 buttons
+      if (stage === "2") {
+        const btn = document.getElementById(skipExisting ? "btnStep3MissingSheets" : "btnStep3MasterSheets");
+        const otherBtn = document.getElementById(skipExisting ? "btnStep3MasterSheets" : "btnStep3MissingSheets");
+        const spinner = document.getElementById(skipExisting ? "spinnerStep3Missing" : "spinnerStep3");
+        const txt = document.getElementById(skipExisting ? "txtStep3Missing" : "txtStep3");
+        if (otherBtn) otherBtn.disabled = true;
+        if (btn && spinner && txt) {
+          btn.disabled = true;
+          spinner.style.display = "inline-block";
+          txt.innerText = skipExisting ? "미생성 시트 생성 중..." : "마스터 시트 생성 중...";
+        }
+      }
+
+      // Visual feedback for Step 4 buttons
+      if (stage === "4") {
+        const btn = document.getElementById(skipExisting ? "btnStep4MissingKeyframes" : "btnStep4Keyframes");
+        const otherBtn = document.getElementById(skipExisting ? "btnStep4Keyframes" : "btnStep4MissingKeyframes");
+        const spinner = document.getElementById(skipExisting ? "spinnerStep4Missing" : "spinnerStep4");
+        const txt = document.getElementById(skipExisting ? "txtStep4Missing" : "txtStep4");
+        if (otherBtn) otherBtn.disabled = true;
+        if (btn && spinner && txt) {
+          btn.disabled = true;
+          spinner.style.display = "inline-block";
+          txt.innerText = skipExisting ? "미생성 키프레임 생성 중..." : "키프레임 생성 중...";
+        }
+      }
+
+      // Visual feedback for Step 5 buttons
+      if (stage === "5") {
+        const btn = document.getElementById(skipExisting ? "btnStep5MissingTakes" : "btnStep5Takes");
+        const otherBtn = document.getElementById(skipExisting ? "btnStep5Takes" : "btnStep5MissingTakes");
+        const spinner = document.getElementById(skipExisting ? "spinnerStep5Missing" : "spinnerStep5");
+        const txt = document.getElementById(skipExisting ? "txtStep5Missing" : "txtStep5");
+        if (otherBtn) otherBtn.disabled = true;
+        if (btn && spinner && txt) {
+          btn.disabled = true;
+          spinner.style.display = "inline-block";
+          txt.innerText = skipExisting ? "미생성 영상 이어서 렌더링 중..." : "비디오 전체 렌더링 중...";
+        }
+      }
+
+      const res = await fetch("/api/run_stage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project: currentProject, stage, model: targetModel, image_model: selectedImgModel, skip_existing: skipExisting })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (stage === "5" && skipExisting) {
+          showToast("생성 안 된 영상만 이어서 렌더링하고 최종 컷까지 자동 완성합니다! (기존 영상 스킵)", "info");
+        } else if (stage === "4" && skipExisting) {
+          showToast("생성 안 된 키프레임만 이어서 생성합니다! (기존 이미지 스킵)", "info");
+        } else if (stage === "6") {
+          showToast("FFmpeg 24fps 최종 컷 합본 및 자막 재렌더링을 시작합니다!", "info");
+        }
+      }
+    }
+
+    function openNewProjectModal() {
+      document.getElementById("newProjectModal").classList.add("active");
+    }
+    function closeNewProjectModal() {
+      document.getElementById("newProjectModal").classList.remove("active");
+    }
+    async function submitCreateProject() {
+      const name = document.getElementById("newProjectNameInput").value;
+      if (!name) return;
+      const res = await fetch("/api/create_project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem("short_drama_active_project", data.project);
+        closeNewProjectModal();
+        await loadProjects();
+      } else {
+        showToast(data.error || "프로젝트 생성 실패", "error");
+      }
+    }
+
+    /* Global Reactive Polling (Auto-refresh without browser reload) */
+    let lastDataHash = "";
+    let wasBusy = false;
+    let shownJobErrorId = null;
+
+    function startStatusPolling() {
+      // 1. Job status polling (2.5s)
+      setInterval(async () => {
+        try {
+          const res = await fetch("/api/job_status");
+          const status = await res.json();
+          const dot = document.getElementById("statusDot");
+          const txt = document.getElementById("statusText");
+          const log = document.getElementById("statusRecentLog");
+
+          if (status.error && status.error_id && status.error_id !== shownJobErrorId) {
+            shownJobErrorId = status.error_id;
+            alert("작업이 실패하여 중단되었습니다.\n\n" + status.error);
+          }
+          if (status.current_job) {
+            wasBusy = true;
+            dot.className = "dot busy";
+            txt.innerText = status.current_job;
+
+            // If Step 3 is running, update button text dynamically
+            const txtStep3 = document.getElementById("txtStep3");
+            const spinnerStep3 = document.getElementById("spinnerStep3");
+            const btnStep3 = document.getElementById("btnStep3MasterSheets");
+            if (status.current_job.includes("마스터 시트 생성 중")) {
+              if (txtStep3) txtStep3.innerText = status.current_job;
+              if (spinnerStep3) spinnerStep3.style.display = "inline-block";
+              if (btnStep3) btnStep3.disabled = true;
+            }
+
+            // If Step 4 is running, update button text dynamically
+            const txtStep4 = document.getElementById("txtStep4");
+            const spinnerStep4 = document.getElementById("spinnerStep4");
+            const btnStep4 = document.getElementById("btnStep4Keyframes");
+            if (status.current_job.includes("키프레임 생성 중")) {
+              if (txtStep4) txtStep4.innerText = status.current_job;
+              if (spinnerStep4) spinnerStep4.style.display = "inline-block";
+              if (btnStep4) btnStep4.disabled = true;
+            }
+
+            // If Step 5 is running, update button text dynamically
+            const txtStep5 = document.getElementById("txtStep5");
+            const spinnerStep5 = document.getElementById("spinnerStep5");
+            const btnStep5 = document.getElementById("btnStep5Takes");
+            if (status.current_job.includes("비디오 테이크 렌더링 중") || status.current_job.includes("최종 컷 자동 합성 중")) {
+              if (txtStep5) txtStep5.innerText = status.current_job;
+              if (spinnerStep5) spinnerStep5.style.display = "inline-block";
+              if (btnStep5) btnStep5.disabled = true;
+            }
+          } else {
+            if (wasBusy) {
+              wasBusy = false;
+              await refreshProjectData();
+            }
+            dot.className = "dot";
+            txt.innerText = status.error ? "작업 실패" : "준비 완료 (Idle)";
+            
+            // Restore Step 3 buttons
+            const txtStep3 = document.getElementById("txtStep3");
+            const spinnerStep3 = document.getElementById("spinnerStep3");
+            const btnStep3 = document.getElementById("btnStep3MasterSheets");
+            if (txtStep3 && txtStep3.innerText.includes("생성 중")) {
+              txtStep3.innerText = "Step 3: 마스터 시트 3종 생성";
+              if (spinnerStep3) spinnerStep3.style.display = "none";
+            }
+            if (btnStep3) btnStep3.disabled = false;
+
+            const txtStep3Missing = document.getElementById("txtStep3Missing");
+            const spinnerStep3Missing = document.getElementById("spinnerStep3Missing");
+            const btnStep3Missing = document.getElementById("btnStep3MissingSheets");
+            if (txtStep3Missing && txtStep3Missing.innerText.includes("생성 중")) {
+              txtStep3Missing.innerText = "⚡ 미생성 시트만 생성";
+              if (spinnerStep3Missing) spinnerStep3Missing.style.display = "none";
+            }
+            if (btnStep3Missing) btnStep3Missing.disabled = false;
+
+            const txtAutoAll = document.getElementById("txtAutoAll");
+            const spinnerAutoAll = document.getElementById("spinnerAutoAll");
+            const btnAutoAll = document.getElementById("btnAutoAllPipeline");
+            if (txtAutoAll && txtAutoAll.innerText.includes("진행 중")) {
+              txtAutoAll.innerText = "⚡ 원클릭 전체 자동 제작 (Step 3➔5)";
+              if (spinnerAutoAll) spinnerAutoAll.style.display = "none";
+            }
+            if (btnAutoAll) btnAutoAll.disabled = false;
+
+            // Restore Step 4 buttons
+            const txtStep4 = document.getElementById("txtStep4");
+            const spinnerStep4 = document.getElementById("spinnerStep4");
+            const btnStep4 = document.getElementById("btnStep4Keyframes");
+            if (txtStep4 && txtStep4.innerText.includes("생성 중")) {
+              txtStep4.innerText = "Step 4: 전체 키프레임 생성";
+              if (spinnerStep4) spinnerStep4.style.display = "none";
+            }
+            if (btnStep4) btnStep4.disabled = false;
+
+            const txtStep4Missing = document.getElementById("txtStep4Missing");
+            const spinnerStep4Missing = document.getElementById("spinnerStep4Missing");
+            const btnStep4Missing = document.getElementById("btnStep4MissingKeyframes");
+            if (txtStep4Missing && txtStep4Missing.innerText.includes("생성 중")) {
+              txtStep4Missing.innerText = "⚡ 미생성 키프레임만 이어서 생성";
+              if (spinnerStep4Missing) spinnerStep4Missing.style.display = "none";
+            }
+            if (btnStep4Missing) btnStep4Missing.disabled = false;
+
+            // Restore Step 5 buttons
+            const txtStep5 = document.getElementById("txtStep5");
+            const spinnerStep5 = document.getElementById("spinnerStep5");
+            const btnStep5 = document.getElementById("btnStep5Takes");
+            if (txtStep5 && (txtStep5.innerText.includes("렌더링 중") || txtStep5.innerText.includes("합성 중"))) {
+              txtStep5.innerText = "Step 5: 전체 영상 렌더링 & 최종 컷";
+              if (spinnerStep5) spinnerStep5.style.display = "none";
+            }
+            if (btnStep5) btnStep5.disabled = false;
+
+            const txtStep5Missing = document.getElementById("txtStep5Missing");
+            const spinnerStep5Missing = document.getElementById("spinnerStep5Missing");
+            const btnStep5Missing = document.getElementById("btnStep5MissingTakes");
+            if (txtStep5Missing && (txtStep5Missing.innerText.includes("렌더링 중") || txtStep5Missing.innerText.includes("합성 중"))) {
+              txtStep5Missing.innerText = "⚡ 미생성 영상만 이어서 생성 & 최종 컷";
+              if (spinnerStep5Missing) spinnerStep5Missing.style.display = "none";
+            }
+            if (btnStep5Missing) btnStep5Missing.disabled = false;
+          }
+
+          if (status.logs && status.logs.length > 0) {
+            log.innerText = status.logs[status.logs.length - 1];
+          }
+        } catch (e) {}
+      }, 2000);
+
+      // 2. Real-time Background Sync (Checks for changes every 2.5s and updates DOM silently)
+      setInterval(async () => {
+        // Skip refreshing if user is actively typing in textarea to avoid overwriting cursor
+        const activeElem = document.activeElement;
+        const isEditing = activeElem && (activeElem.id === "screenplayEditor" || activeElem.id === "refNotesInput" || activeElem.id === "scriptFeedbackInput");
+        
+        const requestedProject = currentProject;
+        const requestedEpoch = projectEpoch;
+        try {
+          const res = await fetch(`/api/project_data?project=${encodeURIComponent(requestedProject)}`);
+          const newData = await res.json();
+          if (requestedProject !== currentProject || requestedEpoch !== projectEpoch || newData.project !== requestedProject || editorProject !== requestedProject) return;
+          
+          // Generate a state hash that tracks file change timestamps / URLs
+          const newHash = JSON.stringify({
+            screenplay_len: (newData.screenplay || '').length,
+            screenplay_head: (newData.screenplay || '').slice(0, 120),
+            bible_title: newData.bible?.title || '',
+            bible_chars_count: (newData.bible?.characters || []).length,
+            bible_scenes_count: (newData.bible?.scenes || []).length,
+            breakdown_segs_count: (newData.breakdown?.segments || []).length,
+            breakdown_head: ((newData.breakdown?.segments || [])[0]?.first_state || '').slice(0, 80),
+            proposals_count: (newData.proposals?.items || []).length,
+            proposals_request_id: newData.proposals?.request_id || newData.proposals?.generated_at || '',
+            proposal_review: newData.proposal_review,
+            master_chars: newData.master_urls?.characters || '',
+            master_character_pages: newData.master_urls?.character_pages || [],
+            master_scenes: newData.master_urls?.scenes || '',
+            master_props: newData.master_urls?.props || '',
+            sliced_chars: Object.values(newData.assets?.characters || {}).map(c => [c.web_url || '', c.face_web_url || '']),
+            sliced_scenes: Object.values(newData.assets?.scenes || {}).map(s => s.web_url || ''),
+            sliced_props: Object.values(newData.assets?.props || {}).map(p => p.web_url || ''),
+            keyframes: (newData.keyframes || []).map(k => [k.segment_id, k.web_url || '', k.continuity_frame_url || '', k.continuity_frame_status, (k.refs || []).length, k.effective_mode, k.continuity_mode, k.continuity_auto]),
+            takes: (newData.takes || []).map(t => [t.segment_id, t.web_url || '', t.continuity_mode, t.continuity_auto, t.dialogue_review]),
+            dialogue_review: newData.dialogue_review,
+            story_review: newData.story_review,
+            final_cut_url: newData.final_cut_url || '',
+            clean_cut_url: newData.clean_cut_url || ''
+          });
+
+          if (newHash !== lastDataHash) {
+            lastDataHash = newHash;
+            projectData = newData;
+
+            // Update proposals immediately
+            renderProposalsOnly();
+
+            // Update media tabs and screenplay only when not focused
+            if (!isEditing && document.getElementById("screenplayEditor").value === editorSavedText) {
+              document.getElementById("screenplayEditor").value = projectData.screenplay || "";
+              editorSavedText = projectData.screenplay || "";
+            }
+            renderBreakdownTab();
+            renderAssetsTab();
+            renderKeyframesTab();
+            renderTakesTab();
+            updateWizardSteps();
+          }
+        } catch (e) {}
+      }, 2500);
+    }
+
+    function renderProposalsOnly() {
+      const propContainer = document.getElementById("synopsisList");
+      const applyBtn = document.getElementById("btnApplySynopsis");
+      const badge = document.getElementById("proposalBadge");
+
+      if (projectData.proposals && projectData.proposals.items && projectData.proposals.items.length > 0) {
+        renderProposalReview();
+        badge.innerText = `총 ${projectData.proposals.items.length}개 제안 도착`;
+        propContainer.innerHTML = buildProposalCardsHtml(projectData.proposals.items);
+        applyBtn.style.display = selectedSynopsisIndex !== null ? "inline-flex" : "none";
+      } else {
+        renderProposalReview();
+        badge.innerText = "";
+        propContainer.innerHTML = `
+          <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: var(--radius-sm);">
+            URL을 입력하고 [시놉시스 요청]을 누르면 3가지 시놉시스가 여기에 표시됩니다.
+          </div>
+        `;
+        applyBtn.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
+

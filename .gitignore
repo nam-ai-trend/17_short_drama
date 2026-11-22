@@ -1,0 +1,23 @@
+# Secrets & Environment
+.env
+
+# Python / OS / Logs
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.DS_Store
+
+# Generated Media & Project Outputs (videos, keyframes, master sheets, scripts)
+outputs/
+workspace/
+
+# Internal Planning, Docs, Tests & Dev Caches (excluded from public repo)
+PLAN.md
+PRD.md
+handover.md
+checklist.md
+GLOSSARY.md
+docs/
+tests/
+graphify-out/

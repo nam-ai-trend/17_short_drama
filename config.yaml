@@ -1,0 +1,48 @@
+project:
+  name: "Short Drama Higgsfield Pipeline"
+  version: "1.1.0"
+
+video:
+  model: "seedance_2_0_mini"      # Seedance 2.0 Mini Image-to-Video (4~15초 정수, 기본값)
+  aspect_ratio: "9:16"            # 모바일 숏폼 세로형 표준
+  default_duration: 12            # 길이가 지정되지 않은 경우에만 사용(초)
+  resolution: "720p"              # 720p 또는 1080p
+  fps: 24                         # 시네마틱 표준 24fps 전역 고정
+  generate_audio: true            # Wan 3.0 오디오 생성 활성화
+  wait: true
+  wait_timeout: "600s"
+
+image:
+  model: "nano_banana_2_1"        # 힉스필드 나노바나나 (인물 레퍼런스 일관성 고정)
+  aspect_ratio: "9:16"
+  wait: true
+
+audio:
+  model: "qwen_audio_tts"         # 힉스필드 Qwen Audio 3.0 TTS Flash (한국어 지원)
+  language: "ko"
+  format: "mp3"
+  wait: true
+
+# 캐릭터별 음성 일관성을 보장하는 고유 보이스 프로필 (Higgsfield voices list 공식 UUID)
+voice_profiles:
+  yeong_ja:
+    voice_id: "3c2b83c0-2e0a-5ae8-998a-a5fe71b7eccd" # Helena (preset)
+    instruction: "슬프고 가늘게 떨리는 70대 노모의 애절한 목소리"
+    speech_rate: 0.95
+    pitch_rate: 1.0
+  jin_woo:
+    voice_id: "30fc8796-ceb6-4a66-b3a7-4a145ef7f346" # Arthur (preset)
+    instruction: "따뜻하지만 슬픔이 배어 있는 30대 남성의 진중한 목소리"
+    speech_rate: 1.0
+    pitch_rate: 1.0
+  min_seok:
+    voice_id: "b847bc29-f184-583a-8ad9-d1f1e16d1a60" # Dylan (preset)
+    instruction: "약간 퉁명스럽고 현실적인 20대 청년의 목소리"
+    speech_rate: 1.05
+    pitch_rate: 1.0
+
+paths:
+  workspace_dir: "outputs"
+  templates_dir: "templates"
+  schemas_dir: "schemas"
+  ffmpeg_bin: "/opt/homebrew/bin/ffmpeg"
