@@ -4,9 +4,10 @@
   "private": true,
   "description": "AI 숏폼 드라마 자동 제작 파이프라인 & 웹 스튜디오",
   "scripts": {
-    "dev": "python3 dashboard_server.py",
+    "dev": "sh -c 'PIDS=$(lsof -t -i :8899 2>/dev/null); if [ -n \"$PIDS\" ]; then kill $PIDS 2>/dev/null || true; sleep 0.5; fi; exec python3 dashboard_server.py'",
     "start": "python3 dashboard_server.py",
-    "stop": "kill $(lsof -t -i :8899) 2>/dev/null || true",
-    "restart": "pnpm run stop && python3 dashboard_server.py"
+    "stop": "sh -c 'PIDS=$(lsof -t -i :8899 2>/dev/null); if [ -n \"$PIDS\" ]; then kill $PIDS 2>/dev/null || true; fi'",
+    "restart": "pnpm run dev"
   }
 }
+
