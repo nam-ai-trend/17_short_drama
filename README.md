@@ -82,14 +82,18 @@ cp .env.example .env
 프로젝트 폴더에서 아래 명령어를 실행하면 로컬 웹 서버(`8899` 포트)가 켜집니다:
 
 ```bash
-# 1) 기본 실행 (터미널을 켜둔 상태로 사용, 종료 시 Ctrl + C)
+# 1) 가장 간단한 실행 (pnpm / npm)
+pnpm dev
+
+# 또는 Python 직접 실행 (종료 시 Ctrl + C)
 python3 dashboard_server.py
 
 # 2) 백그라운드 실행 (터미널을 닫아도 계속 켜두기)
 nohup python3 dashboard_server.py > dashboard_server.log 2>&1 &
 
-# 3) 실행 중인 로컬호스트 종료하기
-kill $(lsof -t -i :8899)
+# 3) 실행 중인 로컬호스트 종료 / 재시작
+pnpm stop
+pnpm restart
 ```
 서버가 켜지면 브라우저에서 **[http://localhost:8899](http://localhost:8899)** 로 접속합니다.
 *(가상환경을 만들었다면 실행 전에 `source .venv/bin/activate`를 먼저 입력해 주세요.)*

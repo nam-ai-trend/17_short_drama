@@ -1,0 +1,12 @@
+{
+  "name": "short-drama-studio",
+  "version": "1.1.0",
+  "private": true,
+  "description": "AI 숏폼 드라마 자동 제작 파이프라인 & 웹 스튜디오",
+  "scripts": {
+    "dev": "python3 dashboard_server.py",
+    "start": "python3 dashboard_server.py",
+    "stop": "kill $(lsof -t -i :8899) 2>/dev/null || true",
+    "restart": "pnpm run stop && python3 dashboard_server.py"
+  }
+}
